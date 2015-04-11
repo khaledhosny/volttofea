@@ -44,13 +44,13 @@ def process_anchors(data):
 def main(filename):
     font = TTFont(filename)
     if "TSIV" in font:
-        volt = font["TSIV"].data.decode("utf-8").replace("\r", "\n")
-        glyphs = re.findall(r'(DEF_GLYPH.*?.END_GLYPH)', volt, re.DOTALL)
-        scripts = re.findall(r'(DEF_SCRIPT.*?.END_SCRIPT)', volt, re.DOTALL)
-        groups = re.findall(r'(DEF_GROUP.*?.END_GROUP)', volt, re.DOTALL)
-        sub_lookups = re.findall(r'DEF_LOOKUP.*?.AS_SUBSTITUTION.*?.END_SUBSTITUTION', volt, re.DOTALL)
-        pos_lookups = re.findall(r'DEF_LOOKUP.*?.AS_POSITION.*?.END_POSITION', volt, re.DOTALL)
-        anchors = re.findall(r'(DEF_ANCHOR.*?.END_ANCHOR)', volt, re.DOTALL)
+        tsiv = font["TSIV"].data.decode("utf-8").replace("\r", "\n")
+        glyphs = re.findall(r'(DEF_GLYPH.*?.END_GLYPH)', tsiv, re.DOTALL)
+        scripts = re.findall(r'(DEF_SCRIPT.*?.END_SCRIPT)', tsiv, re.DOTALL)
+        groups = re.findall(r'(DEF_GROUP.*?.END_GROUP)', tsiv, re.DOTALL)
+        sub_lookups = re.findall(r'DEF_LOOKUP.*?.AS_SUBSTITUTION.*?.END_SUBSTITUTION', tsiv, re.DOTALL)
+        pos_lookups = re.findall(r'DEF_LOOKUP.*?.AS_POSITION.*?.END_POSITION', tsiv, re.DOTALL)
+        anchors = re.findall(r'(DEF_ANCHOR.*?.END_ANCHOR)', tsiv, re.DOTALL)
 
         process_glyphs(glyphs)
         process_scripts(scripts)
