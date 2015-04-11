@@ -3,17 +3,36 @@
 import re
 import sys
 
+from collections import OrderedDict
+
 from fontTools.ttLib import TTFont
 
 glyph_re = re.compile(r'''DEF_GLYPH\s+"([^"]+)"\s+ID\s+(\d+)\s+(?:(?:UNICODEVALUES\s+"([^"]+)"\s+)|(?:UNICODE\s+(\d+))\s+)?(?:TYPE\s+(MARK|BASE|LIGATURE)\s+)?(?:COMPONENTS\s+(\d+)\s+)?END_GLYPH''')
 
 def process_glyphs(data):
+    gdef = {
+        "classes": OrderedDict([("BASE", []), ("LIGATURE", []), ("MARK", []), ("COMPONENT", [])])
+    }
+
     for glyph in data:
         m = glyph_re.match(glyph)
         assert m
         gname, gid, univalues, gchar, gclass, gcomponents = m.groups()
+        if gclass:
+            gdef["classes"][gclass].append(gname)
         assert gname
         assert gid
+
+    return gdef
+
+def dump_gdef(gdef):
+    text = ""
+    classes = gdef["classes"]
+    for k in classes:
+        text += "@GDEF_%s = [%s];\n" % (k, " ".join(classes[k]))
+
+    text += "table GDEF {\nGlyphClassDef %s;\n} GDEF;" % ", ".join("@GDEF_%s" % k for k in classes)
+    return text
 
 def process_features(data):
     for feature in data:
@@ -43,6 +62,8 @@ def process_anchors(data):
 
 def main(filename):
     font = TTFont(filename)
+    out = ""
+
     if "TSIV" in font:
         tsiv = font["TSIV"].data.decode("utf-8").replace("\r", "\n")
         glyphs = re.findall(r'(DEF_GLYPH.*?.END_GLYPH)', tsiv, re.DOTALL)
@@ -52,12 +73,14 @@ def main(filename):
         pos_lookups = re.findall(r'DEF_LOOKUP.*?.AS_POSITION.*?.END_POSITION', tsiv, re.DOTALL)
         anchors = re.findall(r'(DEF_ANCHOR.*?.END_ANCHOR)', tsiv, re.DOTALL)
 
-        process_glyphs(glyphs)
+        gdef = process_glyphs(glyphs)
         process_scripts(scripts)
         process_groups(groups)
         process_substitutions(sub_lookups)
         process_positioning(pos_lookups)
         process_anchors(anchors)
+
+        out += dump_gdef(gdef)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
