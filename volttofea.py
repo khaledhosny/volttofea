@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 import re
 import sys
 
@@ -42,7 +44,7 @@ def process_anchors(data):
 def main(filename):
     font = TTFont(filename)
     if "TSIV" in font:
-        volt = font["TSIV"].data.replace("\r", "\n")
+        volt = font["TSIV"].data.decode("utf-8").replace("\r", "\n")
         glyphs = re.findall(r'(DEF_GLYPH.*?.END_GLYPH)', volt, re.DOTALL)
         scripts = re.findall(r'(DEF_SCRIPT.*?.END_SCRIPT)', volt, re.DOTALL)
         groups = re.findall(r'(DEF_GROUP.*?.END_GROUP)', volt, re.DOTALL)
@@ -61,5 +63,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         main(sys.argv[1])
     else:
-        print 'Usage: %s fontfile' % sys.argv[0]
+        print('Usage: %s fontfile' % sys.argv[0])
         sys.exit(1)
