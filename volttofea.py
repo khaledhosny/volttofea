@@ -82,8 +82,28 @@ feature %s {
 """ % (tag, script, language, lookups, tag)
     return text
 
+def process_enums(data):
+    glyphs = []
+    for block in data:
+        glyphs.extend(re.findall(r'GLYPH "(.*?.)"', block))
+    return glyphs
+
 def process_groups(data):
-    pass
+    groups = OrderedDict()
+    for block in data:
+        m = re.match(r'DEF_GROUP "(.*?.)"', block)
+        name = m.groups()[0]
+        enums = re.findall(r'(ENUM.*?.END_ENUM)', block, re.DOTALL)
+        groups[name] = process_enums(enums)
+    return groups
+
+def dump_groups(groups):
+    text = ""
+    for name in groups:
+        glyphs = groups[name]
+        text += '@%s = [%s];' % (sanitize_name(name, 'g'), ' '.join(glyphs))
+        text += '\n'
+    return text
 
 def process_substitutions(data):
     pass
@@ -109,11 +129,12 @@ def main(filename, outfilename):
 
         glyphs = process_glyphs(glyphs)
         features = process_scripts(scripts)
-        process_groups(groups)
+        groups = process_groups(groups)
         process_substitutions(sub_lookups)
         process_positioning(pos_lookups)
         process_anchors(anchors)
 
+        out += dump_groups(groups)
         out += dump_features(features)
         out += dump_glyphs(glyphs)
         out += "\n"
