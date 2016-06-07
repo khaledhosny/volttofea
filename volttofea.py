@@ -65,14 +65,14 @@ def process_scripts(data):
         features.extend(process_langsys(langsys, tag))
     return features
 
-def make_lookup_name(name):
-    return 'l_' + name.replace(' ', '_')
+def sanitize_name(name, prefix):
+    return prefix + '_' + name.replace(' ', '_')
 
 def dump_features(features):
     text = ""
     for feature in features:
         tag, script, language, lookups = feature
-        lookups = "\n  ".join(["lookup %s;" % make_lookup_name(l) for l in lookups])
+        lookups = "\n  ".join(["lookup %s;" % sanitize_name(l, 'l') for l in lookups])
         text += """
 feature %s {
  script %s;
