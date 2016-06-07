@@ -28,10 +28,13 @@ def process_glyphs(data):
 def dump_glyphs(glyphs):
     text = ""
     classes = glyphs["classes"]
-    for k in classes:
-        text += "@GDEF_%s = [%s];\n" % (k, " ".join(classes[k]))
+    for c in classes:
+        text += "@GDEF_%s = [%s];\n" % (c, " ".join(classes[c]))
 
-    text += "table GDEF {\nGlyphClassDef %s;\n} GDEF;" % ", ".join("@GDEF_%s" % k for k in classes)
+    text += """
+table GDEF {
+ GlyphClassDef %s;
+} GDEF;""" % ", ".join("@GDEF_%s" % c for c in classes)
     return text
 
 def process_features(data, script, language):
