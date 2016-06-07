@@ -34,19 +34,50 @@ def dump_gdef(gdef):
     text += "table GDEF {\nGlyphClassDef %s;\n} GDEF;" % ", ".join("@GDEF_%s" % k for k in classes)
     return text
 
-def process_features(data):
+def process_features(data, script, language):
+    features = []
     for block in data:
-        pass
+        m = re.match(r'DEF_FEATURE NAME "(.*?.)" TAG "(.*?.)"', block)
+        name, tag = m.groups()
+        lookups = re.findall(r'LOOKUP "(.*?.)"', block)
+        feature = (tag, script, language, lookups)
+        features.append(feature)
+    return features
 
-def process_langsys(data):
+def process_langsys(data, script):
+    features = []
     for block in data:
-        features = re.findall(r'(DEF_FEATURE.*?.END_FEATURE)', block, re.DOTALL)
-        process_features(features)
+        m = re.match(r'DEF_LANGSYS NAME "(.*?.)" TAG "(.*?.)"', block)
+        name, tag = m.groups()
+        feadata = re.findall(r'(DEF_FEATURE.*?.END_FEATURE)', block, re.DOTALL)
+        features.extend(process_features(feadata, script, tag))
+    return features
 
 def process_scripts(data):
+    features = []
     for block in data:
+        m = re.match(r'DEF_SCRIPT NAME "(.*?.)" TAG "(.*?.)"', block)
+        name, tag = m.groups()
         langsys = re.findall(r'(DEF_LANGSYS.*?.END_LANGSYS)', block, re.DOTALL)
-        process_langsys(langsys)
+        features.extend(process_langsys(langsys, tag))
+    return features
+
+def make_lookup_name(name):
+    return 'l_' + name.replace(' ', '_')
+
+def dump_features(features):
+    text = ""
+    for feature in features:
+        tag, script, language, lookups = feature
+        lookups = "\n  ".join(["lookup %s;" % make_lookup_name(l) for l in lookups])
+        text += """
+feature %s {
+ script %s;
+ language %s;
+  %s
+} %s;
+""" % (tag, script, language, lookups, tag)
+    return text
 
 def process_groups(data):
     pass
@@ -74,12 +105,13 @@ def main(filename):
         anchors = re.findall(r'(DEF_ANCHOR.*?.END_ANCHOR)', tsiv, re.DOTALL)
 
         gdef = process_glyphs(glyphs)
-        process_scripts(scripts)
+        features = process_scripts(scripts)
         process_groups(groups)
         process_substitutions(sub_lookups)
         process_positioning(pos_lookups)
         process_anchors(anchors)
 
+        out += dump_features(features)
         out += dump_gdef(gdef)
 
 if __name__ == '__main__':
