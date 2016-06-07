@@ -105,8 +105,65 @@ def dump_groups(groups):
         text += '\n'
     return text
 
+flags_map = {
+    "SKIP_MARKS": "IgnoreMarks",
+    "SKIP_BASE": "IgnoreBaseGlyphs",
+    # LIGATURES?
+    "DIRECTION_RTL": "RightToLeft",
+    # ???
+}
+
+ignored_flags = ["PROCESS_BASE", "PROCESS_MARKS", "ALL", "DIRECTION_LTR"]
+
+def process_flags(flags):
+    out = []
+
+    flags = flags.replace("DIRECTION ", "DIRECTION_")
+    flags = flags.split(" ")
+    for flag in flags:
+        if flag in flags_map:
+            out.append(flags_map[flag])
+        elif flag not in ignored_flags:
+            raise NotImplemented("Unknown flag: %s" % flag)
+
+    return out
+
 def process_substitutions(data):
-    pass
+    lookups = OrderedDict()
+    for block in data:
+        m = re.match(r'DEF_LOOKUP "(.*?.)" (.*.)', block)
+        name, flags = m.groups()
+        context = re.findall(r'IN_CONTEXT(.*?.)END_CONTEXT', block, re.DOTALL)
+        context = [c.strip() for c in context if c.strip()]
+        if not context:
+            # Simple substitution
+            subs = []
+            for sub in re.findall(r'SUB (.*?.)WITH (.*?.)END_SUB', block, re.DOTALL):
+                subs.append([process_enums([i]) for i in sub])
+            flags = process_flags(flags)
+            lookups[name] = (flags, subs)
+        else:
+            pass
+
+    return lookups
+
+def dump_substitutions(substitutions):
+    text = ""
+    for name in substitutions:
+        flags, subs = substitutions[name]
+        name = sanitize_name(name, 'l')
+        if not flags:
+            flags = "0"
+        flags = " ".join(flags)
+        subs = "\n  ".join(["sub %s by %s;" % (" ".join(s[0]), " ".join(s[1])) for s in subs])
+        text += """
+lookup %s {
+ lookupflag %s
+  %s
+} %s;
+""" % (name, flags, subs, name)
+
+    return text
 
 def process_positioning(data):
     pass
@@ -130,10 +187,11 @@ def main(filename, outfilename):
         glyphs = process_glyphs(glyphs)
         features = process_scripts(scripts)
         groups = process_groups(groups)
-        process_substitutions(sub_lookups)
+        substitutions = process_substitutions(sub_lookups)
         process_positioning(pos_lookups)
         process_anchors(anchors)
 
+        out += dump_substitutions(substitutions)
         out += dump_groups(groups)
         out += dump_features(features)
         out += dump_glyphs(glyphs)
