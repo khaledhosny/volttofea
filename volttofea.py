@@ -116,9 +116,10 @@ def main(filename, outfilename):
 
         out += dump_features(features)
         out += dump_glyphs(glyphs)
+        out += "\n"
 
-    with open(outfilename, 'w') as outfile:
-        outfile.write(out)
+        with open(outfilename, 'w') as outfile:
+            outfile.write(out)
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
