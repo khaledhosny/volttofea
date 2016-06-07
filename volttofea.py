@@ -10,7 +10,7 @@ from fontTools.ttLib import TTFont
 glyph_re = re.compile(r'''DEF_GLYPH\s+"([^"]+)"\s+ID\s+(\d+)\s+(?:(?:UNICODEVALUES\s+"([^"]+)"\s+)|(?:UNICODE\s+(\d+))\s+)?(?:TYPE\s+(MARK|BASE|LIGATURE)\s+)?(?:COMPONENTS\s+(\d+)\s+)?END_GLYPH''')
 
 def process_glyphs(data):
-    gdef = {
+    glyphs = {
         "classes": OrderedDict([("BASE", []), ("LIGATURE", []), ("MARK", []), ("COMPONENT", [])])
     }
 
@@ -19,15 +19,15 @@ def process_glyphs(data):
         assert m
         gname, gid, univalues, gchar, gclass, gcomponents = m.groups()
         if gclass:
-            gdef["classes"][gclass].append(gname)
+            glyphs["classes"][gclass].append(gname)
         assert gname
         assert gid
 
-    return gdef
+    return glyphs
 
-def dump_gdef(gdef):
+def dump_glyphs(glyphs):
     text = ""
-    classes = gdef["classes"]
+    classes = glyphs["classes"]
     for k in classes:
         text += "@GDEF_%s = [%s];\n" % (k, " ".join(classes[k]))
 
@@ -104,7 +104,7 @@ def main(filename, outfilename):
         pos_lookups = re.findall(r'DEF_LOOKUP.*?.AS_POSITION.*?.END_POSITION', tsiv, re.DOTALL)
         anchors = re.findall(r'(DEF_ANCHOR.*?.END_ANCHOR)', tsiv, re.DOTALL)
 
-        gdef = process_glyphs(glyphs)
+        glyphs = process_glyphs(glyphs)
         features = process_scripts(scripts)
         process_groups(groups)
         process_substitutions(sub_lookups)
@@ -112,7 +112,7 @@ def main(filename, outfilename):
         process_anchors(anchors)
 
         out += dump_features(features)
-        out += dump_gdef(gdef)
+        out += dump_glyphs(glyphs)
 
     with open(outfilename, 'w') as outfile:
         outfile.write(out)
