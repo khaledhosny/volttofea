@@ -35,17 +35,17 @@ def dump_gdef(gdef):
     return text
 
 def process_features(data):
-    for feature in data:
+    for block in data:
         pass
 
 def process_langsys(data):
-    for langsys in data:
-        features = re.findall(r'(DEF_FEATURE.*?.END_FEATURE)', langsys, re.DOTALL)
+    for block in data:
+        features = re.findall(r'(DEF_FEATURE.*?.END_FEATURE)', block, re.DOTALL)
         process_features(features)
 
 def process_scripts(data):
-    for script in data:
-        langsys = re.findall(r'(DEF_LANGSYS.*?.END_LANGSYS)', script, re.DOTALL)
+    for block in data:
+        langsys = re.findall(r'(DEF_LANGSYS.*?.END_LANGSYS)', block, re.DOTALL)
         process_langsys(langsys)
 
 def process_groups(data):
