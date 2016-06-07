@@ -91,7 +91,7 @@ def process_positioning(data):
 def process_anchors(data):
     pass
 
-def main(filename):
+def main(filename, outfilename):
     font = TTFont(filename)
     out = ""
 
@@ -114,9 +114,12 @@ def main(filename):
         out += dump_features(features)
         out += dump_gdef(gdef)
 
+    with open(outfilename, 'w') as outfile:
+        outfile.write(out)
+
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        main(sys.argv[1])
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
     else:
-        print('Usage: %s fontfile' % sys.argv[0])
+        print('Usage: %s fontfile feafile' % sys.argv[0])
         sys.exit(1)
