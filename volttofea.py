@@ -82,6 +82,11 @@ feature %s {
 """ % (tag, script, language, lookups, tag)
     return text
 
+def process_glyphs_list(data):
+    data = re.sub(r'GLYPH "(.*?.)"', r'\1', data)
+    data = re.sub(r'GROUP "(.*?.)"', lambda m: sanitize_name(m.group(1), "@g"), data)
+    return data.strip().split()
+
 def process_enums(data):
     glyphs = []
     for block in data:
@@ -139,7 +144,7 @@ def process_substitutions(data):
             # Simple substitution
             subs = []
             for sub in re.findall(r'SUB (.*?.)WITH (.*?.)END_SUB', block, re.DOTALL):
-                subs.append([process_enums([i]) for i in sub])
+                subs.append([process_glyphs_list(i) for i in sub])
             flags = process_flags(flags)
             lookups[name] = (flags, subs)
         else:
