@@ -101,7 +101,7 @@ def dump_groups(groups):
     text = ""
     for name in groups:
         glyphs = groups[name]
-        text += '@%s = [%s];' % (sanitize_name(name, 'g'), ' '.join(glyphs))
+        text += '%s = [%s];' % (sanitize_name(name, '@g'), ' '.join(glyphs))
         text += '\n'
     return text
 
