@@ -133,6 +133,22 @@ def process_flags(flags):
 
     return out
 
+def process_context(data):
+    left = []
+    right = []
+    for block in data:
+        m = re.match(r'(RIGHT|LEFT) (.*.)', block)
+        position, glyphs = m.groups()
+        glyphs = process_glyphs_list(glyphs)
+        if position == "LEFT":
+            left.extend(glyphs)
+        elif position == "RIGHT":
+            right.extend(glyphs)
+        else:
+            raise NotImplementedError("Unknown context type: %s" % position)
+
+    return left, right
+
 def process_substitutions(data):
     lookups = OrderedDict()
     for block in data:
@@ -140,27 +156,50 @@ def process_substitutions(data):
         name, flags = m.groups()
         context = re.findall(r'IN_CONTEXT(.*?.)END_CONTEXT', block, re.DOTALL)
         context = [c.strip() for c in context if c.strip()]
-        if not context:
-            # Simple substitution
-            subs = []
-            for sub in re.findall(r'SUB (.*?.)WITH (.*?.)END_SUB', block, re.DOTALL):
-                subs.append([process_glyphs_list(i) for i in sub])
-            flags = process_flags(flags)
-            lookups[name] = (flags, subs)
-        else:
-            pass
+        left = []
+        right = []
+        subs = []
+        for sub in re.findall(r'SUB (.*?.)WITH (.*?.)END_SUB', block, re.DOTALL):
+            subs.append([process_glyphs_list(i) for i in sub])
+        if context:
+            left, right = process_context(context)
+        flags = process_flags(flags)
+        lookups[name] = (flags, subs, left, right)
 
     return lookups
 
 def dump_substitutions(substitutions):
     text = ""
     for name in substitutions:
-        flags, subs = substitutions[name]
+        flags, subs, left, right = substitutions[name]
         name = sanitize_name(name, 'l')
         if not flags:
             flags = "0"
         flags = " ".join(flags)
-        subs = "\n  ".join(["sub %s by %s;" % (" ".join(s[0]), " ".join(s[1])) for s in subs])
+        if left or right:
+            g_in = []
+            g_out = []
+            for sub in subs:
+                assert(len(sub[0]) == 1)
+                assert(len(sub[1]) == 1)
+                g_in.append(sub[0][0])
+                g_out.append(sub[1][0])
+            assert(len(g_in) == len(g_out))
+            g_in = " ".join(g_in)
+            g_out = " ".join(g_out)
+            left = " ".join(left)
+            right = " ".join(right)
+            if " " in g_in:
+                g_in = "[" + g_in + "]"
+            if " " in g_out:
+                g_out = "[" + g_out + "]"
+            if " " in left:
+                left = "[" + left + "]"
+            if " " in right:
+                right = "[" + right + "]"
+            subs = "  sub %s %s' %s by %s;" % (left, g_in, right, g_out)
+        else:
+            subs = "\n  ".join(["sub %s by %s;" % (" ".join(s[0]), " ".join(s[1])) for s in subs])
         text += """
 lookup %s {
  lookupflag %s
