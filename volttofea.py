@@ -129,7 +129,7 @@ def process_flags(flags):
         if flag in flags_map:
             out.append(flags_map[flag])
         elif flag not in ignored_flags:
-            raise NotImplemented("Unknown flag: %s" % flag)
+            raise NotImplementedError("Unknown flag: %s" % flag)
 
     return out
 
