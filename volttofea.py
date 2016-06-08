@@ -196,8 +196,8 @@ def main(filename, outfilename):
         process_positioning(pos_lookups)
         process_anchors(anchors)
 
-        out += dump_substitutions(substitutions)
         out += dump_groups(groups)
+        out += dump_substitutions(substitutions)
         out += dump_features(features)
         out += dump_glyphs(glyphs)
         out += "\n"
